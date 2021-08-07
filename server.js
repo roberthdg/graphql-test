@@ -3,18 +3,6 @@ const expressGraphql = require('express-graphql')
 const app = express()
 const {GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLList, GraphQLInt, GraphQLNonNull} = require('graphql')
 
-// const schema = new GraphQLSchema({
-//     query: new GraphQLObjectType({
-//         name: 'HelloWorld',
-//         fields: () => ({
-//             message: {
-//                 type: GraphQLString,
-//                 resolve: () =>  'hello woeld'
-//             }
-//         })
-//     })
-// })
-
 const authors = [
 	{ id: 1, name: 'J. K. Rowling' },
 	{ id: 2, name: 'J. R. R. Tolkien' },
@@ -32,13 +20,35 @@ const books = [
 	{ id: 8, name: 'Beyond the Shadows', authorId: 3 }
 ]
 
+
 const BookType = new GraphQLObjectType({
     name: 'Book',
     description: 'this represents a book written by an object',
     fields: () => ({
         id: { type: GraphQLNonNull(GraphQLInt) },
         name: { type: GraphQLNonNull(GraphQLString) },
-        authorId: { type: GraphQLNonNull(GraphQLInt) }
+        authorId: { type: GraphQLNonNull(GraphQLInt) },
+        author: { 
+            type: AuthorType,
+            resolve: (book) => {
+                return authors.find(author => author.id === book.authorId)
+            }
+        }
+    })
+})  
+
+const AuthorType = new GraphQLObjectType({
+    name: 'Author',
+    description: 'this represents an author of a book',
+    fields: () => ({
+        id: { type: GraphQLNonNull(GraphQLInt) },
+        name: { type: GraphQLNonNull(GraphQLString) },
+        books: { 
+            type: new GraphQLList(BookType),
+            resolve: (author) => {
+                return books.filter(book => book.authorId === author.id)
+            }
+        }
     })
 })  
 
@@ -50,7 +60,11 @@ const RootQueryType = new GraphQLObjectType({
             type: new GraphQLList(BookType),
             description: 'list of books',
             resolve: () => books
-
+        },
+        authors: {
+            type: new GraphQLList(AuthorType),
+            description: 'list of authors',
+            resolve: () => authors
         }
     })
 })
